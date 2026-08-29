@@ -13,15 +13,11 @@ export function createApp() {
   const app = express();
   // CLIENT_URL may be a comma-separated list (prod URL, preview URLs, local dev).
   const allowed = config.clientUrl.split(",").map((u) => u.trim()).filter(Boolean);
-  app.use(
-    cors({
-      origin: (origin, cb) => {
-        if (!origin || allowed.includes(origin) || allowed.includes("*")) return cb(null, true);
-        cb(new Error("Not allowed by CORS"));
-      },
-      credentials: true,
-    })
-  );
+  const corsOrigin =
+    allowed.includes("*") || allowed.length === 0
+      ? true // reflect any origin (still sends credentials headers correctly)
+      : allowed; // cors natively matches the request origin against this list
+  app.use(cors({ origin: corsOrigin, credentials: true }));
   app.use(express.json());
   app.use(cookieParser());
 

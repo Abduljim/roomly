@@ -6,3 +6,5 @@ build/
 *.tsbuildinfo
 server/prisma/dev.db
 .DS_Store
+.vercel
+.env*
