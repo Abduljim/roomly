@@ -100,7 +100,9 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease \
+            -ProomlyVersionCode=$ROOMLY_VERSION_CODE \
+            -ProomlyVersionName=$ROOMLY_VERSION_NAME
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
