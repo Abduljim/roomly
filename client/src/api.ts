@@ -3,11 +3,12 @@ import { Capacitor } from "@capacitor/core";
 const isNative = Capacitor.isNativePlatform();
 
 // Web: call the API through the same-origin Vercel rewrite (/api -> Render), so
-// cookies stay same-site and auth works in every browser. Native (Capacitor): no
+// cookies stay same-site and auth works in every browser. BASE stays "" so the
+// request resolves to /api/path on the current origin. Native (Capacitor): no
 // proxy exists, so the host is provided at build time via VITE_API_URL.
 const BASE = isNative
-  ? (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") || "/api"
-  : "/api";
+  ? (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") || ""
+  : "";
 
 export async function api<T = unknown>(
   path: string,
