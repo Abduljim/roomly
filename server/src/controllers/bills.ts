@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../middleware/errors";
 import { validateSplits } from "../services/settlement";
@@ -58,7 +59,7 @@ export async function createBill(req: Request, res: Response, next: NextFunction
       },
       include: { splits: true },
     });
-    res.status(201).json(bill);
+    res.status(201).json(serializeBill(bill));
   } catch (err) {
     next(err);
   }
@@ -71,10 +72,36 @@ export async function listBills(req: Request, res: Response, next: NextFunction)
       include: { splits: { include: { membership: { include: { user: true } } } } },
       orderBy: { createdAt: "desc" },
     });
-    res.json(bills);
+    res.json(bills.map(serializeBill));
   } catch (err) {
     next(err);
   }
+}
+
+/** Prisma Decimal fields serialize as strings — normalize money values to numbers for the client. */
+function serializeBill(bill: {
+  id: string;
+  name: string;
+  amount: Prisma.Decimal;
+  recurrence: string;
+  dueDay: number | null;
+  category: string;
+  createdBy: string;
+  isActive: boolean;
+  createdAt: Date;
+  splits: Array<{
+    id: string;
+    membershipId: string;
+    splitType: string;
+    splitValue: Prisma.Decimal;
+    membership?: unknown;
+  }>;
+}) {
+  return {
+    ...bill,
+    amount: Number(bill.amount),
+    splits: bill.splits.map((s) => ({ ...s, splitValue: Number(s.splitValue) })),
+  };
 }
 
 export async function editBill(req: Request, res: Response, next: NextFunction) {
@@ -111,7 +138,7 @@ export async function editBill(req: Request, res: Response, next: NextFunction) 
       include: { splits: true },
     });
     // NOTE: edits only affect future cycles — past BillCycles keep their amount_snapshot.
-    res.json(updated);
+    res.json(serializeBill(updated));
   } catch (err) {
     next(err);
   }

@@ -11,9 +11,9 @@ interface PaymentRecord {
   confirmedAt: string | null;
   createdAt: string;
   settlementMonth: string;
-  payer: { user: { displayName: string } };
-  payee: { user: { displayName: string } };
-  billCycle: { bill: { name: string } };
+  payerName: string;
+  payeeName: string;
+  billName: string;
 }
 interface Member {
   id: string;
@@ -96,8 +96,8 @@ export default function History() {
                 onClick={() => setExpanded(expanded === p.id ? null : p.id)}
               >
                 <span className="text-sm">
-                  <strong>{p.payer.user.displayName}</strong> → <strong>{p.payee.user.displayName}</strong>
-                  <span className="text-stone-400"> · {p.billCycle.bill.name}</span>
+                  <strong>{p.payerName}</strong> → <strong>{p.payeeName}</strong>
+                  <span className="text-stone-400"> · {p.billName}</span>
                 </span>
                 <span className="flex items-center gap-2 shrink-0">
                   <span className="text-sm font-medium">{money(p.amount)}</span>

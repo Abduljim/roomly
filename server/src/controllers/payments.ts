@@ -118,7 +118,23 @@ export async function paymentHistory(req: Request, res: Response, next: NextFunc
       },
       orderBy: { createdAt: "desc" },
     });
-    res.json(payments);
+    res.json(
+      payments.map((p) => ({
+        id: p.id,
+        amount: Number(p.amount),
+        status: p.status,
+        note: p.note,
+        sentAt: p.sentAt,
+        confirmedAt: p.confirmedAt,
+        createdAt: p.createdAt,
+        settlementMonth: p.settlementMonth,
+        payerMembershipId: p.payerMembershipId,
+        payeeMembershipId: p.payeeMembershipId,
+        payerName: p.payer.user.displayName,
+        payeeName: p.payee.user.displayName,
+        billName: p.billCycle.bill.name,
+      }))
+    );
   } catch (err) {
     next(err);
   }
