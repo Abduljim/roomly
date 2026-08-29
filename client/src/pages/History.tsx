@@ -20,11 +20,11 @@ interface Member {
   user: { displayName: string };
 }
 
-const statusColors: Record<string, string> = {
-  pending: "bg-stone-100 text-stone-500",
-  sent: "bg-blue-50 text-blue-600",
-  confirmed: "bg-green-50 text-green-700",
-  disputed: "bg-red-50 text-red-600",
+const statusStyles: Record<string, { chip: string; dot: string }> = {
+  pending: { chip: "chip bg-ink/5 text-ink/60", dot: "bg-ink/40" },
+  sent: { chip: "chip bg-blue-50 text-blue-600", dot: "bg-blue-500" },
+  confirmed: { chip: "chip bg-cash-100 text-cash-600", dot: "bg-cash-600" },
+  disputed: { chip: "chip bg-red-50 text-red-600", dot: "bg-red-500" },
 };
 
 export default function History() {
@@ -55,16 +55,26 @@ export default function History() {
     load();
   }, [load]);
 
-  const input =
-    "border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-warm-500";
-
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Payment history</h1>
+    <div className="space-y-5">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-600">Ledger</p>
+        <h1 className="font-display font-bold text-2xl tracking-tight">Payment history</h1>
+      </div>
 
-      <div className="flex flex-wrap gap-2">
-        <input className={input} type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
-        <select className={input} value={memberId} onChange={(e) => setMemberId(e.target.value)}>
+      {/* Filters */}
+      <div className="card p-3.5 space-y-2.5 stagger">
+        <div className="grid grid-cols-2 gap-2">
+          <input className="field" type="month" value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month" />
+          <select className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="sent">Sent</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="disputed">Disputed</option>
+          </select>
+        </div>
+        <select className="field" value={memberId} onChange={(e) => setMemberId(e.target.value)}>
           <option value="">All members</option>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
@@ -72,53 +82,104 @@ export default function History() {
             </option>
           ))}
         </select>
-        <select className={input} value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="sent">Sent</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="disputed">Disputed</option>
-        </select>
+        {(month || memberId || status) && (
+          <button
+            className="text-xs text-brand-600 font-medium hover:underline"
+            onClick={() => {
+              setMonth("");
+              setMemberId("");
+              setStatus("");
+            }}
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {payments.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-stone-200 p-8 text-center text-stone-400 text-sm">
+        <div className="card p-10 text-center text-ink/45 text-sm wiggle">
+          <div className="text-3xl mb-2">🗂️</div>
           No payments match these filters.
         </div>
       ) : (
-        <ul className="space-y-2">
-          {payments.map((p) => (
-            <li key={p.id} className="bg-white rounded-xl border border-stone-200">
-              <button
-                className="w-full text-left px-4 py-3 flex items-center justify-between gap-2"
-                onClick={() => setExpanded(expanded === p.id ? null : p.id)}
-              >
-                <span className="text-sm">
-                  <strong>{p.payerName}</strong> → <strong>{p.payeeName}</strong>
-                  <span className="text-stone-400"> · {p.billName}</span>
-                </span>
-                <span className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-medium">{money(p.amount)}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[p.status] ?? ""}`}>
-                    {p.status}
+        <ul className="space-y-2.5 stagger">
+          {payments.map((p) => {
+            const st = statusStyles[p.status] ?? statusStyles.pending;
+            const isOpen = expanded === p.id;
+            return (
+              <li key={p.id} className="card overflow-hidden card-hover">
+                <button
+                  className="w-full text-left px-4 py-3.5 flex items-center justify-between gap-3"
+                  onClick={() => setExpanded(isOpen ? null : p.id)}
+                >
+                  <span className="flex items-center gap-3 min-w-0">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${st.dot}`} />
+                    <span className="text-sm min-w-0">
+                      <span className="font-semibold">{p.payerName}</span>
+                      <span className="text-ink/40"> → </span>
+                      <span className="font-semibold">{p.payeeName}</span>
+                      <span className="text-ink/40 hidden sm:inline"> · {p.billName}</span>
+                    </span>
                   </span>
-                </span>
-              </button>
-              {expanded === p.id && (
-                <div className="px-4 pb-4 text-xs text-stone-500 space-y-1 border-t border-stone-100 pt-3">
-                  <p>Month: {p.settlementMonth.slice(0, 7)}</p>
-                  <p>Created: {new Date(p.createdAt).toLocaleString()}</p>
-                  {p.sentAt && <p>Marked sent: {new Date(p.sentAt).toLocaleString()}</p>}
-                  {p.confirmedAt && <p>Confirmed: {new Date(p.confirmedAt).toLocaleString()}</p>}
-                  {p.note && <p className="text-stone-700">Note: {p.note}</p>}
-                </div>
-              )}
-            </li>
-          ))}
+                  <span className="flex items-center gap-2.5 shrink-0">
+                    <span className="font-display font-bold text-ink">{money(p.amount)}</span>
+                    <span className={st.chip}>{p.status}</span>
+                    <Chevron up={isOpen} />
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 text-xs text-ink/55 space-y-1 border-t border-ink/5 pt-3 overflow-hidden page-enter">
+                    <Row k="Bill" v={p.billName || "—"} />
+                    <Row k="Month" v={p.settlementMonth.slice(0, 7)} />
+                    <Row k="Created" v={fmt(p.createdAt)} />
+                    {p.sentAt && <Row k="Marked sent" v={fmt(p.sentAt)} />}
+                    {p.confirmedAt && <Row k="Confirmed" v={fmt(p.confirmedAt)} />}
+                    {p.note && <Row k="Note" v={p.note} strong />}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
   );
+}
+
+function Row({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
+  return (
+    <p className="flex justify-between gap-4">
+      <span className="text-ink/40 shrink-0">{k}</span>
+      <span className={`text-right ${strong ? "text-ink font-semibold" : "text-ink/80"}`}>{v}</span>
+    </p>
+  );
+}
+
+function Chevron({ up }: { up: boolean }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`text-ink/35 transition-transform duration-300 ${up ? "rotate-180" : ""}`}
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+function fmt(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }

@@ -12,7 +12,15 @@ export default function App() {
   const { user, loading, household } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen grid place-items-center text-stone-400">Loading…</div>;
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="coin-float text-4xl">🪙</div>
+          <div className="skeleton w-40 h-3" />
+          <div className="skeleton w-24 h-3" />
+        </div>
+      </div>
+    );
   }
 
   if (!user) return <Landing />;
