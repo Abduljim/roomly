@@ -59,7 +59,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function logout(_req: Request, res: Response) {
-  res.clearCookie(config.cookieName);
+  res.clearCookie(config.cookieName, {
+    httpOnly: true,
+    sameSite: config.cookieSameSite,
+    secure: config.cookieSecure,
+    path: "/",
+  });
   res.json({ ok: true });
 }
 
