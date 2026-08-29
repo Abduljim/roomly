@@ -11,7 +11,7 @@ android {
         applicationId "com.roomly.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (project.findProperty('roomlyVersionCode') ?: '1').toInteger()
+        versionCode ((project.findProperty('roomlyVersionCode') ?: '1') as Integer)
         versionName (project.findProperty('roomlyVersionName') ?: '1.0.0')
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
