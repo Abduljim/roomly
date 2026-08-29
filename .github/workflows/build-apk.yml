@@ -89,7 +89,6 @@ jobs:
             -alias "$ROOMLY_KEY_ALIAS" \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass "$ROOMLY_KEYSTORE_PASSWORD" \
-            -keypass "$ROOMLY_KEY_PASSWORD" \
             -dname "CN=Roomly, OU=Roomly, O=Roomly, L=Internet, ST=Internet, C=US"
 
       - name: Build signed release APK

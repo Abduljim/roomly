@@ -26,7 +26,7 @@ android {
                 storeFile keystoreFile
                 storePassword System.getenv('ROOMLY_KEYSTORE_PASSWORD') ?: ''
                 keyAlias System.getenv('ROOMLY_KEY_ALIAS') ?: 'roomly'
-                keyPassword System.getenv('ROOMLY_KEY_PASSWORD') ?: ''
+                keyPassword (System.getenv('ROOMLY_KEY_PASSWORD') ?: System.getenv('ROOMLY_KEYSTORE_PASSWORD')) ?: ''
             }
         }
     }
