@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: roomly-server
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # paste your Neon connection string in the Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false   # your Vercel URL (comma-separated list allowed)
+      - key: NODE_ENV
+        value: production

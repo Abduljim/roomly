@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  member
+}
+
+enum Recurrence {
+  monthly
+  one_time
+}
+
+enum Category {
+  rent
+  utility
+  internet
+  other
+}
+
+enum SplitType {
+  percentage
+  fixed
+}
+
+enum PaymentStatus {
+  pending
+  sent
+  confirmed
+  disputed
+}
+
+enum NotificationType {
+  bill_added
+  payment_sent
+  payment_confirmed
+  due_reminder
+  overdue
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  displayName   String
+  createdAt     DateTime @default(now())
+  memberships   Membership[]
+  notifications Notification[]
+  billsCreated  Bill[]         @relation("BillCreator")
+  householdsOwned Household[]  @relation("HouseholdCreator")
+}
+
+model Household {
+  id                   String   @id @default(uuid())
+  name                 String
+  createdBy            String
+  creator              User     @relation("HouseholdCreator", fields: [createdBy], references: [id])
+  inviteCode           String   @unique
+  inviteCodeExpiresAt  DateTime?
+  createdAt            DateTime @default(now())
+  memberships          Membership[]
+  bills                Bill[]
+}
+
+model Membership {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  role        Role
+  joinedAt    DateTime @default(now())
+  splits      BillSplit[]
+  paymentsMade   Payment[] @relation("Payer")
+  paymentsReceived Payment[] @relation("Payee")
+
+  @@unique([householdId, userId])
+}
+
+model Bill {
+  id         String   @id @default(uuid())
+  householdId String
+  household  Household @relation(fields: [householdId], references: [id])
+  name       String
+  amount     Decimal  @db.Decimal(12, 2)
+  recurrence Recurrence
+  dueDay     Int?
+  category   Category
+  createdBy  String
+  creator    User     @relation("BillCreator", fields: [createdBy], references: [id])
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  splits     BillSplit[]
+  cycles     BillCycle[]
+}
+
+model BillSplit {
+  id           String @id @default(uuid())
+  billId       String
+  bill         Bill   @relation(fields: [billId], references: [id])
+  membershipId String
+  membership   Membership @relation(fields: [membershipId], references: [id])
+  splitType    SplitType
+  splitValue   Decimal @db.Decimal(12, 2)
+}
+
+model BillCycle {
+  id             String   @id @default(uuid())
+  billId         String
+  bill           Bill     @relation(fields: [billId], references: [id])
+  periodMonth    DateTime @db.Date
+  amountSnapshot Decimal @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+  payments       Payment[]
+
+  @@unique([billId, periodMonth])
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  billCycleId       String
+  billCycle         BillCycle @relation(fields: [billCycleId], references: [id])
+  payerMembershipId String
+  payer             Membership @relation("Payer", fields: [payerMembershipId], references: [id])
+  payeeMembershipId String
+  payee             Membership @relation("Payee", fields: [payeeMembershipId], references: [id])
+  amount            Decimal @db.Decimal(12, 2)
+  status            PaymentStatus
+  note              String?
+  sentAt            DateTime?
+  confirmedAt       DateTime?
+  settlementMonth   DateTime @db.Date
+  createdAt         DateTime @default(now())
+
+  @@index([settlementMonth, payerMembershipId, payeeMembershipId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      NotificationType
+  payload   Json
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
